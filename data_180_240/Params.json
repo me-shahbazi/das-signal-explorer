@@ -1,0 +1,9 @@
+{
+    "sampleRate_MHz": 250,
+    "distance_m": 2000.0,
+    "pulseWidth": 50,
+    "scanRate_Hz": 1500,
+    "framesofDATA": 1024,
+    "rawDataFormat": "int16",
+    "senario": "steping @180m for 10s and then going to 240m and returning back to 180m"
+}

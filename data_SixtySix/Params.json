@@ -1,0 +1,8 @@
+{
+    "sampleRate_MHz": 250,
+    "distance_m": 2000.0,
+    "pulseWidth": 50,
+    "scanRate_Hz": 1024,
+    "framesofDATA": 1024,
+    "rawDataFormat": "int16"
+}

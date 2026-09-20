@@ -1,0 +1,21 @@
+# Python environment and cache
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Raw data and generated media
+*.dat
+*.npy
+*.npz
+*.mp4
+*.wav
+
+# Generated results
+output/
+
+# Local secrets
+.env
+.env.*
+!.env.example
