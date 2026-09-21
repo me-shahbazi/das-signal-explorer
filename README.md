@@ -52,13 +52,23 @@ The project was tested with Python 3.14.3 on Windows. The voice player uses
 the Windows standard-library module winsound; no extra playback package is
 needed.
 
-From the project root:
+From the project root in Command Prompt:
+
+~~~bat
+python -m venv .venv
+.venv\Scripts\activate
+python -m pip install -r requirements.txt
+~~~
+
+In PowerShell, activate the same environment with:
 
 ~~~powershell
-python -m venv .venv
 .venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+~~~
+
+Then create the generated-results directory:
+
+~~~powershell
 New-Item -ItemType Directory -Force output
 ~~~
 

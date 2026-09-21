@@ -220,6 +220,23 @@ class DASVoicePlayer:
         return pcm, output_rate, gain
 
     @staticmethod
+    def _write_wav(pcm, output_rate, output_wav):
+        path = Path(output_wav).expanduser()
+        if path.suffix.lower() != ".wav":
+            raise ValueError("export_wav must use a .wav filename.")
+        if not path.parent.is_dir():
+            raise FileNotFoundError(f"WAV output folder does not exist: {path.parent}")
+
+        # Open exclusively so an existing analysis recording is never replaced.
+        with path.open("xb") as stream:
+            with wave.open(stream, "wb") as wav:
+                wav.setnchannels(1)
+                wav.setsampwidth(2)
+                wav.setframerate(output_rate)
+                wav.writeframes(pcm.tobytes())
+        return path.resolve()
+
+    @staticmethod
     def _play_pcm(pcm, output_rate):
         try:
             import winsound
@@ -251,6 +268,7 @@ class DASVoicePlayer:
         highpass_hz: float | None = 10.0,
         volume=0.8,
         gain: float | None = None,
+        export_wav=None,
     ):
         """Read, prepare and play a distance trace; return playback information.
 
@@ -268,6 +286,8 @@ class DASVoicePlayer:
             Use equal gain, volume and filter settings to compare points.
             Excessive fixed gain raises an error rather than clipping or
             silently renormalizing the signal.
+        export_wav: optional path for a WAV copy of the exact audio sent to
+            playback. Existing files are never overwritten.
 
         A selection must contain at least two source samples. Processing occurs
         before synchronous playback; importing this module does not play sound.
@@ -317,6 +337,11 @@ class DASVoicePlayer:
             trace, source_rate, crop_start, crop_stop, highpass_hz, volume,
             fixed_gain=gain,
         )
+        saved_wav = (
+            self._write_wav(pcm, output_rate, export_wav)
+            if export_wav is not None
+            else None
+        )
         info = {
             "requested_distance_m": distance_m,
             "actual_distance_m": actual_distance,
@@ -331,6 +356,7 @@ class DASVoicePlayer:
             "gain": applied_gain,
             "gain_mode": "auto" if gain is None else "fixed",
             "fixed_gain": gain,
+            "wav_path": str(saved_wav) if saved_wav is not None else None,
         }
         print(
             f"Playing {actual_distance:g} m | PRF {source_rate} Hz | "
@@ -338,6 +364,8 @@ class DASVoicePlayer:
             f"output {output_rate} Hz | high-pass {highpass_hz} | "
             f"gain {info['gain_mode']} ({applied_gain:g}x)"
         )
+        if saved_wav is not None:
+            print(f"Saved WAV: {saved_wav}")
         self._play_pcm(pcm, output_rate)
         return info
 
@@ -354,6 +382,10 @@ def _main():
     parser.add_argument("--gain", type=float, default=None,
         help="Optional fixed gain before the volume multiplier; omit for automatic peak normalization.",
     )
+    parser.add_argument(
+        "--export-wav", default=None, metavar="PATH",
+        help="Save the exact playback audio to a new WAV file before playing.",
+    )
     filtering = parser.add_mutually_exclusive_group()
     filtering.add_argument("--highpass", type=float, default=10.0, help="High-pass cutoff in Hz (10).")
     filtering.add_argument("--no-filter", action="store_true", help="Bypass the extra high-pass filter.")
@@ -366,6 +398,7 @@ def _main():
             highpass_hz=None if args.no_filter else args.highpass,
             volume=args.volume,
             gain=args.gain,
+            export_wav=args.export_wav,
         )
     except (OSError, ValueError, RuntimeError) as exc:
         parser.exit(1, f"Playback failed: {exc}\n")
